@@ -65,6 +65,35 @@ Each scenario follows a structured investigation process:
 7. Verification
 8. Lessons Learned
 
+## Investigation Methodology
+
+```text
+Alarm / Incident
+       │
+       ▼
+Impact Assessment
+       │
+       ▼
+Initial Investigation
+       │
+       ▼
+Technical Analysis
+       │
+       ▼
+Root Cause Analysis
+       │
+       ▼
+Corrective Actions
+       │
+       ▼
+Verification
+       │
+       ▼
+Incident Closure
+```
+
+This methodology is used throughout the repository to ensure a consistent and structured troubleshooting approach.
+
 ## Repository Structure
 
 ```text

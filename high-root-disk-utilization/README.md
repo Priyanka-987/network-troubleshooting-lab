@@ -92,6 +92,3 @@ Confirm filesystem utilization returned below operational threshold.
 * Implement retention policies.
 * Monitor filesystem growth trends.
 * Review image accumulation during maintenance windows.
-
-```
-```

@@ -2,75 +2,82 @@
 
 ## Incident Summary
 
-Infrastructure monitoring reported excessive root filesystem utilization exceeding operational thresholds.
+Infrastructure monitoring reported root filesystem utilization above operational thresholds. Immediate investigation was required to prevent service impact and deployment failures.
 
 ## Impact Assessment
 
 Potential impact included:
 
-- Service degradation
-- Failed deployments
-- Log generation issues
-- Application instability
+* Application instability
+* Failed upgrades
+* Inability to write logs
+* Container runtime failures
 
 ## Initial Investigation
 
-Check filesystem usage:
+Verify filesystem usage:
 
 ```bash
 df -h
 ```
 
-Identify affected mount points.
+Identify affected filesystem and utilization trend.
+
+Review recent:
+
+* Software installations
+* Log growth
+* Container deployments
 
 ## Technical Analysis
 
-### Identify Large Directories
+### Identify Major Consumers
 
 ```bash
-du -xh / --max-depth=2
+du -xh / --max-depth=2 2>/dev/null | sort -hr | head
 ```
 
 ### Identify Large Files
 
 ```bash
-find / -type f -size +500M
+find / -type f -size +500M 2>/dev/null
 ```
 
-### Review Journal Usage
+### Review Journal Growth
 
 ```bash
 journalctl --disk-usage
 ```
 
-### Review Container Images
+### Review Container Runtime Usage
 
 ```bash
 crictl images
 ```
 
+### Review Core Dumps
+
+```bash
+find /var -name "core*" 2>/dev/null
+```
+
 ### Review Temporary Files
 
 ```bash
-du -sh /tmp/*
+du -sh /tmp/* 2>/dev/null
 ```
 
 ## Root Cause Analysis
 
-Potential causes:
-
-- Log accumulation
-- Core dumps
-- Temporary files
-- Container image buildup
-- Application-generated data
+Investigation identified excessive log accumulation and unused container images consuming the majority of root filesystem capacity.
 
 ## Corrective Actions
 
-- Remove unnecessary files
-- Rotate logs
-- Remove unused images
-- Archive historical data
+* Remove obsolete logs
+* Rotate journal logs
+* Remove unused images
+* Clean temporary files
+* Archive historical data
 
 ## Verification
 
@@ -78,10 +85,13 @@ Potential causes:
 df -h
 ```
 
-Confirm utilization is within acceptable limits.
+Confirm filesystem utilization returned below operational threshold.
 
 ## Lessons Learned
 
-- Monitor disk growth trends.
-- Implement retention policies.
-- Review storage utilization regularly.
+* Implement retention policies.
+* Monitor filesystem growth trends.
+* Review image accumulation during maintenance windows.
+
+```
+```

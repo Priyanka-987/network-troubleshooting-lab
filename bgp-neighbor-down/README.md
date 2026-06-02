@@ -2,16 +2,16 @@
 
 ## Incident Summary
 
-A routing alarm indicated that a BGP session had transitioned from Established state to Active state, resulting in route exchange failure between peers.
+A BGP session transitioned from Established state to Active state, preventing route exchange between peers.
 
 ## Impact Assessment
 
 Potential impact included:
 
-* Loss of route advertisements
-* Traffic forwarding disruption
-* Service reachability issues
-* Redundant path unavailability
+- Loss of route advertisements
+- Service reachability issues
+- Traffic forwarding disruption
+- Redundant path unavailability
 
 ## Initial Investigation
 
@@ -21,35 +21,29 @@ Verify current BGP status:
 show bgp summary
 ```
 
-Example:
-
-```text
-Neighbor        AS      State
-10.10.10.1      65001   Active
-```
-
-Expected state:
+Expected:
 
 ```text
 Neighbor        AS      State
 10.10.10.1      65001   Established
 ```
 
-Determine whether the issue affects:
+Review recent changes:
 
-* Single neighbor
-* Multiple neighbors
-* Entire routing domain
+- Network maintenance
+- Route policy updates
+- Firewall changes
+- Interface modifications
 
 ## Technical Analysis
 
-### Verify Layer 3 Reachability
+### Verify Reachability
 
 ```bash
 ping 10.10.10.1
 ```
 
-### Verify Routing Path
+### Verify Route Path
 
 ```bash
 traceroute 10.10.10.1
@@ -61,90 +55,60 @@ traceroute 10.10.10.1
 nc -zv 10.10.10.1 179
 ```
 
-### Verify Local Routing Table
+### Verify Routing Table
 
 ```bash
 ip route
 ```
 
-### Verify BGP Configuration
+### Review BGP Configuration
 
-Review:
+Verify:
 
-* Local ASN
-* Remote ASN
-* Neighbor IP
-* Source interface
-* Route policies
+- Local ASN
+- Remote ASN
+- Neighbor IP
+- Route policies
+- Source interface
 
-### Review Routing Daemon Logs
+### Review Logs
 
 ```bash
 journalctl -u frr
 ```
 
-or
-
-```bash
-kubectl logs <speaker-pod>
-```
-
-### Validate Route Advertisement
-
-```bash
-show bgp ipv4 unicast summary
-show bgp ipv4 unicast neighbors
-```
-
-Verify:
-
-* Advertised routes
-* Received routes
-* Prefix count
-* Route filtering
-
 ## Root Cause Analysis
 
-Potential root causes:
+Potential causes:
 
-* Network connectivity loss
-* Incorrect ASN configuration
-* Neighbor configuration mismatch
-* Firewall blocking TCP/179
-* Route policy issue
-* Routing daemon failure
+- Network connectivity failure
+- ASN mismatch
+- Firewall blocking TCP/179
+- Route policy issue
+- Routing daemon issue
 
 ## Corrective Actions
 
-* Restore network connectivity
-* Correct BGP peer configuration
-* Update route policies
-* Restart routing service if required
-* Verify route exchange
+- Restore connectivity
+- Correct peer configuration
+- Update route policies
+- Restart routing services if required
 
 ## Verification
-
-Confirm:
 
 ```bash
 show bgp summary
 ```
 
-Neighbor state:
+Confirm:
 
-```text
-Established
-```
-
-Verify:
-
-* Routes are received
-* Routes are advertised
-* Service reachability restored
+- Neighbor state Established
+- Routes received
+- Routes advertised
+- Service reachability restored
 
 ## Lessons Learned
 
-* Validate reachability before reviewing protocol behavior.
-* Review route policies whenever advertisements are missing.
-* Confirm both control-plane and data-plane functionality before incident closure.
-
+- Verify reachability before protocol troubleshooting.
+- Validate route advertisements after every change.
+- Review route policies during investigation.

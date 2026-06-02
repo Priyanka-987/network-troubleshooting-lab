@@ -52,7 +52,7 @@ Observed repeated failures:
 ```text
 IP allocation failed
 failed to handle service
-parsing address pool nrf4-traffic-vip
+parsing address pool xxx-traffic-vip
 ```
 
 ### Investigate Address Pool Configuration

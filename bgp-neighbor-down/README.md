@@ -2,38 +2,51 @@
 
 ## Incident Summary
 
-A BGP session transitioned from Established state to Active state, preventing route exchange between peers.
+A routing alarm indicated that a BGP peer session transitioned from Established state to Active state, resulting in route exchange failure between neighboring systems.
 
 ## Impact Assessment
 
 Potential impact included:
 
-- Loss of route advertisements
-- Service reachability issues
-- Traffic forwarding disruption
-- Redundant path unavailability
+* Route withdrawal
+* Traffic forwarding disruption
+* Service reachability issues
+* Reduced network redundancy
 
 ## Initial Investigation
 
-Verify current BGP status:
+Verify BGP session status:
 
 ```bash
 show bgp summary
 ```
 
+Example:
+
+```text
+Neighbor        State
+10.10.10.1      Active
+```
+
 Expected:
 
 ```text
-Neighbor        AS      State
-10.10.10.1      65001   Established
+Neighbor        State
+10.10.10.1      Established
 ```
 
-Review recent changes:
+Review recent:
 
-- Network maintenance
-- Route policy updates
-- Firewall changes
-- Interface modifications
+* Network maintenance
+* Configuration changes
+* Route policy updates
+* Infrastructure upgrades
+
+Determine:
+
+* Single peer affected
+* Multiple peers affected
+* Site-wide impact
 
 ## Technical Analysis
 
@@ -49,7 +62,7 @@ ping 10.10.10.1
 traceroute 10.10.10.1
 ```
 
-### Verify TCP Connectivity
+### Verify TCP Session
 
 ```bash
 nc -zv 10.10.10.1 179
@@ -61,40 +74,67 @@ nc -zv 10.10.10.1 179
 ip route
 ```
 
-### Review BGP Configuration
+### Verify Neighbor Configuration
 
-Verify:
+Review:
 
-- Local ASN
-- Remote ASN
-- Neighbor IP
-- Route policies
-- Source interface
+* Local ASN
+* Remote ASN
+* Neighbor address
+* Update source
+* Route policies
 
-### Review Logs
+### Verify Routing Daemon Health
 
 ```bash
-journalctl -u frr
+systemctl status frr
 ```
+
+or
+
+```bash
+kubectl logs <speaker-pod>
+```
+
+### Verify Advertised Routes
+
+```bash
+show bgp ipv4 unicast neighbors
+```
+
+Review:
+
+* Advertised prefixes
+* Received prefixes
+* Prefix filtering
+* Route maps
+
+### Verify Interface Status
+
+```bash
+ip addr
+ip link
+```
+
+Review interface health and address assignment.
 
 ## Root Cause Analysis
 
-Potential causes:
+Investigation identified a routing path failure between BGP peers causing TCP/179 communication failure.
 
-- Network connectivity failure
-- ASN mismatch
-- Firewall blocking TCP/179
-- Route policy issue
-- Routing daemon issue
+Without an active TCP session, the BGP state machine remained in Active state and route exchange could not occur.
 
 ## Corrective Actions
 
-- Restore connectivity
-- Correct peer configuration
-- Update route policies
-- Restart routing services if required
+* Restore Layer 3 connectivity.
+* Verify neighbor configuration.
+* Validate route policies.
+* Restart routing process if required.
+* Re-establish BGP session.
 
 ## Verification
+
+Verify:
 
 ```bash
 show bgp summary
@@ -102,13 +142,19 @@ show bgp summary
 
 Confirm:
 
-- Neighbor state Established
-- Routes received
-- Routes advertised
-- Service reachability restored
+```text
+Established
+```
+
+Verify:
+
+* Prefixes received
+* Prefixes advertised
+* Traffic forwarding restored
+* Monitoring alarms cleared
 
 ## Lessons Learned
 
-- Verify reachability before protocol troubleshooting.
-- Validate route advertisements after every change.
-- Review route policies during investigation.
+* Verify network reachability before investigating BGP protocol behavior.
+* Review route advertisements after every routing change.
+* Correlate routing alarms with transport-layer connectivity.

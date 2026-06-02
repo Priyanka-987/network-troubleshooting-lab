@@ -2,121 +2,146 @@
 
 ## Incident Summary
 
-A configuration synchronization alarm indicated a mismatch between the expected network configuration and the active configuration applied to the platform.
+An ECFE Config Stale alarm was raised indicating a mismatch between the expected network configuration and the configuration successfully applied to the platform.
 
 ## Impact Assessment
 
 Potential impact included:
 
-- Inconsistent network behavior
-- Incorrect route advertisement
-- Service instability
-- Operational alarms
-- Configuration drift between components
+- Failure to advertise service VIPs
+- LoadBalancer provisioning issues
+- Traffic routing inconsistency
+- Service accessibility degradation
 
 ## Initial Investigation
 
-Review active alarms and identify affected components.
+Review active alarms.
 
-Verify platform health:
+Identify affected services and components.
+
+Verify component health:
 
 ```bash
 kubectl get pods -A
 ```
 
-Review recent infrastructure changes:
+Verify service configuration:
 
-- IP modifications
-- Network configuration changes
-- Component upgrades
-- Service restarts
+```bash
+kubectl get svc -A
+```
+
+Review recent network-related changes.
 
 ## Technical Analysis
 
-### Verify ConfigMaps
+### Identify Responsible Component
+
+Review ECFE controller logs:
+
+```bash
+kubectl -n kube-system logs \
+<ecfe-controller-pod> \
+--tail=500 | grep -Ei "config|sync|reload|error"
+```
+
+### Analyze Controller Events
+
+Observed repeated failures:
+
+```text
+IP allocation failed
+failed to handle service
+parsing address pool nrf4-traffic-vip
+```
+
+### Investigate Address Pool Configuration
+
+Review configured VIP pools.
+
+Verify:
+
+- IP ranges
+- CIDR notation
+- LoadBalancer pool configuration
+
+### Root Cause Identification
+
+Controller logs showed:
+
+```text
+invalid CIDR "172.19.205.241"
+```
+
+The configured value was interpreted as a CIDR definition but only a single IP address was provided.
+
+Expected format:
+
+```text
+172.19.205.241/32
+```
+
+or a valid address range depending on platform requirements.
+
+As a result, MetalLB failed validation and rejected the pool configuration.
+
+### Configuration Verification
+
+Verify current configuration:
 
 ```bash
 kubectl get configmap -A
 ```
 
-Review configuration details:
+Verify service allocation:
 
 ```bash
-kubectl describe configmap <configmap-name>
+kubectl get svc -A
 ```
 
-### Verify Component Status
+Verify controller status:
 
 ```bash
-kubectl get pods -A -o wide
+kubectl get pods -n kube-system
 ```
-
-Confirm:
-
-- All pods are running
-- No crash loops
-- No pending rollouts
-
-### Review Logs
-
-```bash
-kubectl logs <pod-name>
-```
-
-Review logs for:
-
-- Configuration synchronization errors
-- Validation failures
-- Network configuration warnings
-
-### Validate Applied Configuration
-
-Compare:
-
-- Expected configuration
-- Active configuration
-- Advertised addresses
-- Service endpoints
-- Route advertisements
-
-Verify all recent changes have been successfully propagated.
 
 ## Root Cause Analysis
 
-Potential causes:
+An invalid VIP definition was introduced into the address pool configuration.
 
-- Configuration mismatch
-- Synchronization failure
-- Stale cached configuration
-- Partial rollout
-- Network configuration update not applied correctly
+The controller successfully loaded the configuration but failed validation during address pool parsing.
+
+This prevented successful VIP allocation and generated repeated synchronization failures, resulting in the ECFE Config Stale alarm.
 
 ## Corrective Actions
 
-- Update incorrect configuration values
-- Trigger configuration synchronization
-- Restart affected components if required
-- Verify rollout completion
-- Validate network advertisement settings
+- Correct address pool configuration.
+- Apply valid CIDR or address range.
+- Synchronize configuration.
+- Verify controller reconciliation.
+- Confirm VIP allocation.
 
 ## Verification
 
-Verify:
+Verify controller logs no longer report parsing failures:
 
 ```bash
-kubectl get pods -A
+kubectl -n kube-system logs <ecfe-controller-pod>
 ```
 
-Confirm:
+Verify LoadBalancer services receive VIPs:
 
-- Alarm cleared
-- Configuration synchronized
-- Services operating normally
-- Network connectivity restored
+```bash
+kubectl get svc -A
+```
+
+Verify alarm clearance.
+
+Verify application accessibility.
 
 ## Lessons Learned
 
-- Validate configuration consistency after every network change.
-- Review synchronization status during rollout activities.
-- Perform post-change verification before incident closure.
-- Monitor alarms after infrastructure modifications.
+- Validate VIP definitions before deployment.
+- Review controller reconciliation logs during configuration alarms.
+- Verify address pool syntax after network modifications.
+- Correlate alarm timestamps with controller events to accelerate root cause identification.
